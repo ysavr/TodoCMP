@@ -2,15 +2,18 @@ package data
 
 import androidx.room.Dao
 import androidx.room.Delete
+import androidx.room.Insert
 import androidx.room.Query
-import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TaskDao {
 
-    @Upsert
-    suspend fun upsert(task: Task)
+    @Insert
+    suspend fun insert(task: Task)
+
+    @Query("Update task SET task = :task, description = :description WHERE id = :id")
+    suspend fun update(task: String, description: String, id: Int)
 
     @Delete
     suspend fun delete(task: Task)

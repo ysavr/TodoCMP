@@ -19,6 +19,12 @@
             "columnName": "completed",
             "affinity": "BOOLEAN",
             "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
           }
         ],
         "primaryKey": {

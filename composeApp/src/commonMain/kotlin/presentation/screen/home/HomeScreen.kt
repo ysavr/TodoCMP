@@ -1,5 +1,6 @@
 package presentation.screen.home
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,93 +23,91 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import data.Task
+import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import data.TaskDao
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
+import presentation.screen.task.TaskScreen
 import todocmp.composeapp.generated.resources.Res
 import todocmp.composeapp.generated.resources.delete
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalResourceApi::class)
-@Composable
-fun HomeScreen(taskDao: TaskDao) {
-    val tasks by taskDao.getAllTask().collectAsState(initial = emptyList())
-    val scope = rememberCoroutineScope()
-    val showDialog =  remember { mutableStateOf(false) }
+class HomeScreen(private val taskDao: TaskDao): Screen {
 
-    if(showDialog.value) {
-        CustomDialog(value = "", setShowDialog = {
-            showDialog.value = it
-        }) {
-            scope.launch {
-                val task = Task(task = it, completed = false)
-                taskDao.upsert(task = task)
-            }
-        }
-    }
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalResourceApi::class)
+    @Composable
+    override fun Content() {
+        val navigator = LocalNavigator.currentOrThrow
+        val tasks by taskDao.getAllTask().collectAsState(initial = emptyList())
+        val scope = rememberCoroutineScope()
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(title = { Text(text = "Home") })
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showDialog.value = true },
-                shape = RoundedCornerShape(size = 12.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add Icon"
-                )
-            }
-        }
-    ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 52.dp)
-        ) {
-            items(tasks.size) { index ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+        Scaffold(
+            topBar = {
+                CenterAlignedTopAppBar(title = { Text(text = "TODO Task") })
+            },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = {
+                        navigator.push(TaskScreen(taskDao = taskDao))
+                    },
+                    shape = RoundedCornerShape(size = 12.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            modifier = Modifier.alpha( 0.5f),
-                            text = tasks[index].task,
-                            fontSize = MaterialTheme.typography.bodyMedium.fontSize,
-                            textDecoration = TextDecoration.None
-                        )
-                    }
-                    IconButton(
-                        onClick = {
-                            scope.launch {
-                                taskDao.delete(tasks[index])
-                            }
-                        }
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add Icon"
+                    )
+                }
+            }
+        ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 52.dp)
+            ) {
+                items(tasks.size) { index ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                navigator.push(TaskScreen(taskDao = taskDao, task = tasks[index]))
+                            },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Icon(
-                            painter = painterResource(
-                                Res.drawable.delete
-                            ),
-                            contentDescription = "Delete Icon",
-                            tint =  MaterialTheme.colorScheme.onSurface.copy(
-                                alpha = 0.38f
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                modifier = Modifier.alpha( 0.5f),
+                                text = tasks[index].task,
+                                fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                                textDecoration = TextDecoration.None
                             )
-                        )
+                        }
+                        IconButton(
+                            onClick = {
+                                scope.launch {
+                                    taskDao.delete(tasks[index])
+                                }
+                            }
+                        ) {
+                            Icon(
+                                painter = painterResource(
+                                    Res.drawable.delete
+                                ),
+                                contentDescription = "Delete Icon",
+                                tint =  MaterialTheme.colorScheme.onSurface.copy(
+                                    alpha = 0.38f
+                                )
+                            )
+                        }
                     }
                 }
             }
