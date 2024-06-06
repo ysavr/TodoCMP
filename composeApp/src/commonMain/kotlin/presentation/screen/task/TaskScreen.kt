@@ -23,102 +23,97 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.navigation.NavHostController
 import data.Task
 import data.TaskDao
 import kotlinx.coroutines.launch
 
-class TaskScreen(
-    private val taskDao: TaskDao,
-    val task: Task? = null
-): Screen {
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TaskScreen(
+    taskDao: TaskDao,
+    task: Task? = null,
+    navController: NavHostController,
+) {
+    val scope = rememberCoroutineScope()
 
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    override fun Content() {
-        val navigator = LocalNavigator.currentOrThrow
-        val scope = rememberCoroutineScope()
+    var currentTitle by remember {
+        mutableStateOf(task?.task ?: "Title")
+    }
+    var currentDescription by remember {
+        mutableStateOf(task?.description ?: "Description")
+    }
 
-        var currentTitle by remember {
-            mutableStateOf(task?.task ?: "Title")
-        }
-        var currentDescription by remember {
-            mutableStateOf(task?.description ?: "Description")
-        }
-
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = {
-                        BasicTextField(
-                            textStyle = TextStyle(
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = MaterialTheme.typography.titleLarge.fontSize
-                            ),
-                            singleLine = true,
-                            value = currentTitle,
-                            onValueChange = { currentTitle = it }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    BasicTextField(
+                        textStyle = TextStyle(
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = MaterialTheme.typography.titleLarge.fontSize
+                        ),
+                        singleLine = true,
+                        value = currentTitle,
+                        onValueChange = { currentTitle = it }
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Default.ArrowBack,
+                            contentDescription = "Back Arrow"
                         )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { navigator.pop() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Default.ArrowBack,
-                                contentDescription = "Back Arrow"
+                    }
+                }
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    if (task == null) {
+                        scope.launch {
+                            val taskModel = Task(
+                                task = currentTitle,
+                                completed = false,
+                                description = currentDescription
+                            )
+                            taskDao.insert(task = taskModel)
+                        }
+                    } else {
+                        scope.launch {
+                            taskDao.update(
+                                task = currentTitle,
+                                description = currentDescription,
+                                id = task.id
                             )
                         }
                     }
+                    navController.popBackStack()
+                },
+                shape = RoundedCornerShape(size = 12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = "Checkmark Icon"
                 )
-            },
-            floatingActionButton = {
-                FloatingActionButton(
-                    onClick = {
-                        if (task == null) {
-                            scope.launch {
-                                val task = Task(
-                                    task = currentTitle,
-                                    completed = false,
-                                    description = currentDescription
-                                )
-                                taskDao.insert(task = task)
-                            }
-                        } else {
-                            scope.launch {
-                                taskDao.update(
-                                    task = currentTitle,
-                                    description = currentDescription,
-                                    id = task.id
-                                )
-                            }
-                        }
-                        navigator.pop()
-                    },
-                    shape = RoundedCornerShape(size = 12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = "Checkmark Icon"
-                    )
-                }
             }
-        ) { padding ->
-            BasicTextField(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(all = 24.dp)
-                    .padding(
-                        top = padding.calculateTopPadding(),
-                        bottom = padding.calculateBottomPadding()
-                    ),
-                textStyle = TextStyle(
-                    fontSize = MaterialTheme.typography.titleMedium.fontSize,
-                    color = MaterialTheme.colorScheme.onSurface
-                ),
-                value = currentDescription,
-                onValueChange = { description ->  currentDescription = description}
-            )
         }
+    ) { padding ->
+        BasicTextField(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(all = 24.dp)
+                .padding(
+                    top = padding.calculateTopPadding(),
+                    bottom = padding.calculateBottomPadding()
+                ),
+            textStyle = TextStyle(
+                fontSize = MaterialTheme.typography.titleMedium.fontSize,
+                color = MaterialTheme.colorScheme.onSurface
+            ),
+            value = currentDescription,
+            onValueChange = { description ->  currentDescription = description}
+        )
     }
 }

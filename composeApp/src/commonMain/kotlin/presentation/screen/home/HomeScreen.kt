@@ -29,85 +29,83 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import data.TaskDao
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
-import presentation.screen.task.TaskScreen
+import presentation.screen.Task
 import todocmp.composeapp.generated.resources.Res
 import todocmp.composeapp.generated.resources.delete
 
-class HomeScreen(private val taskDao: TaskDao): Screen {
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalResourceApi::class)
+@Composable
+fun HomeScreen(
+    taskDao: TaskDao,
+    onNextButtonClicked: (String) -> Unit,
+) {
 
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalResourceApi::class)
-    @Composable
-    override fun Content() {
-        val navigator = LocalNavigator.currentOrThrow
-        val tasks by taskDao.getAllTask().collectAsState(initial = emptyList())
-        val scope = rememberCoroutineScope()
+    val tasks by taskDao.getAllTask().collectAsState(initial = emptyList())
+    val scope = rememberCoroutineScope()
 
-        Scaffold(
-            topBar = {
-                CenterAlignedTopAppBar(title = { Text(text = "TODO Task") })
-            },
-            floatingActionButton = {
-                FloatingActionButton(
-                    onClick = {
-                        navigator.push(TaskScreen(taskDao = taskDao))
-                    },
-                    shape = RoundedCornerShape(size = 12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add Icon"
-                    )
-                }
-            }
-        ) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = 52.dp)
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(title = { Text(text = "TODO Task") })
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+//                    navigator.push(TaskScreen(taskDao = taskDao))
+                    onNextButtonClicked(Task.route)
+                },
+                shape = RoundedCornerShape(size = 12.dp)
             ) {
-                items(tasks.size) { index ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                navigator.push(TaskScreen(taskDao = taskDao, task = tasks[index]))
-                            },
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                modifier = Modifier.alpha( 0.5f),
-                                text = tasks[index].task,
-                                fontSize = MaterialTheme.typography.bodyMedium.fontSize,
-                                textDecoration = TextDecoration.None
-                            )
-                        }
-                        IconButton(
-                            onClick = {
-                                scope.launch {
-                                    taskDao.delete(tasks[index])
-                                }
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add Icon"
+                )
+            }
+        }
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 52.dp)
+        ) {
+            items(tasks.size) { index ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+//                            navigator.push(TaskScreen(taskDao = taskDao, task = tasks[index]))
+                        },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            modifier = Modifier.alpha( 0.5f),
+                            text = tasks[index].task,
+                            fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                            textDecoration = TextDecoration.None
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                taskDao.delete(tasks[index])
                             }
-                        ) {
-                            Icon(
-                                painter = painterResource(
-                                    Res.drawable.delete
-                                ),
-                                contentDescription = "Delete Icon",
-                                tint =  MaterialTheme.colorScheme.onSurface.copy(
-                                    alpha = 0.38f
-                                )
-                            )
                         }
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                Res.drawable.delete
+                            ),
+                            contentDescription = "Delete Icon",
+                            tint =  MaterialTheme.colorScheme.onSurface.copy(
+                                alpha = 0.38f
+                            )
+                        )
                     }
                 }
             }

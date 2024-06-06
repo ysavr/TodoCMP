@@ -49,6 +49,8 @@ kotlin {
             implementation(libs.navigator.screen.model)
             implementation(libs.navigator.transitions)
             implementation(libs.stately.common)
+
+            implementation(libs.androidx.navigation.compose)
         }
     }
 }
