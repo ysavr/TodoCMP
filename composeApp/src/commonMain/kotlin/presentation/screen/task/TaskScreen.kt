@@ -15,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -25,23 +26,23 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import data.Task
-import data.TaskDao
 import kotlinx.coroutines.launch
+import presentation.TaskViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskScreen(
-    taskDao: TaskDao,
-    task: Task? = null,
+    viewModel: TaskViewModel,
     navController: NavHostController,
 ) {
     val scope = rememberCoroutineScope()
+    val taskUiState by viewModel.taskUIState.collectAsState()
 
     var currentTitle by remember {
-        mutableStateOf(task?.task ?: "Title")
+        mutableStateOf(taskUiState.taskEntity?.task ?: "Title")
     }
     var currentDescription by remember {
-        mutableStateOf(task?.description ?: "Description")
+        mutableStateOf(taskUiState.taskEntity?.description ?: "Description")
     }
 
     Scaffold(
@@ -71,22 +72,24 @@ fun TaskScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    if (task == null) {
+                    if (taskUiState.taskEntity == null) {
                         scope.launch {
                             val taskModel = Task(
                                 task = currentTitle,
                                 completed = false,
                                 description = currentDescription
                             )
-                            taskDao.insert(task = taskModel)
+                            viewModel.insertTask(task = taskModel)
                         }
                     } else {
                         scope.launch {
-                            taskDao.update(
-                                task = currentTitle,
-                                description = currentDescription,
-                                id = task.id
-                            )
+                            taskUiState.taskEntity?.id?.let {
+                                viewModel.updateTask(
+                                    task = currentTitle,
+                                    description = currentDescription,
+                                    id = it
+                                )
+                            }
                         }
                     }
                     navController.popBackStack()

@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -29,23 +30,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import data.TaskDao
+import data.Task
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
-import presentation.screen.Task
+import presentation.TaskViewModel
 import todocmp.composeapp.generated.resources.Res
 import todocmp.composeapp.generated.resources.delete
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalResourceApi::class)
 @Composable
 fun HomeScreen(
-    taskDao: TaskDao,
-    onNextButtonClicked: (String) -> Unit,
+    viewModel: TaskViewModel,
+    onAddTaskClicked: () -> Unit,
+    onTaskClicked: (Task) -> Unit
 ) {
 
-    val tasks by taskDao.getAllTask().collectAsState(initial = emptyList())
+    val taskUiState by viewModel.taskUIState.collectAsState()
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(scope) {
+        viewModel.getAllTask()
+    }
 
     Scaffold(
         topBar = {
@@ -54,8 +60,7 @@ fun HomeScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-//                    navigator.push(TaskScreen(taskDao = taskDao))
-                    onNextButtonClicked(Task.route)
+                    onAddTaskClicked()
                 },
                 shape = RoundedCornerShape(size = 12.dp)
             ) {
@@ -71,12 +76,12 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(top = 52.dp)
         ) {
-            items(tasks.size) { index ->
+            items(taskUiState.tasks.size) { index ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-//                            navigator.push(TaskScreen(taskDao = taskDao, task = tasks[index]))
+                            onTaskClicked(taskUiState.tasks[index])
                         },
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -85,7 +90,7 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             modifier = Modifier.alpha( 0.5f),
-                            text = tasks[index].task,
+                            text = taskUiState.tasks[index].task,
                             fontSize = MaterialTheme.typography.bodyMedium.fontSize,
                             textDecoration = TextDecoration.None
                         )
@@ -93,7 +98,7 @@ fun HomeScreen(
                     IconButton(
                         onClick = {
                             scope.launch {
-                                taskDao.delete(tasks[index])
+                                viewModel.deleteTask(taskUiState.tasks[index])
                             }
                         }
                     ) {

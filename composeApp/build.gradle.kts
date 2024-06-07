@@ -51,6 +51,8 @@ kotlin {
             implementation(libs.stately.common)
 
             implementation(libs.androidx.navigation.compose)
+            implementation(libs.androidx.lifecycle.viewmodel.compose)
+            implementation(libs.androidx.lifecycle.runtime.compose)
         }
     }
 }
